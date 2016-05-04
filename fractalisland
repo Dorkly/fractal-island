@@ -1,0 +1,159 @@
+
+
+import java.awt.*;
+import java.awt.geom.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.Random;
+
+public class FractalIsland extends JPanel implements ActionListener
+{
+  private Queue<Point2D.Double> points;
+  private int width, height;
+  private Random rnd;
+  static int d,n;
+  static double a;
+  private JTextField alpha, depth , sides;
+  private JLabel alabel,dlabel,nlabel;
+  private JButton draw;
+  private JSlider redSlider,greenSlider,blueSlider;
+  
+  public FractalIsland()
+  {
+    width = 700;
+    height = 500;
+    points = new LinkedListQueue<Point2D.Double>();
+    
+    draw = new JButton("Draw: ");
+    alabel = new JLabel("alpha:");
+    dlabel = new JLabel("depth:");
+    nlabel = new JLabel("sides:");
+    JPanel upperPanel = new JPanel();
+    JPanel lowerPanel = new JPanel();
+    draw.addActionListener(this);
+    setLayout(new BorderLayout());
+     
+    alpha = new JTextField("0.24");
+    depth = new JTextField("2",2);
+    sides = new JTextField("4",2);
+    
+    redSlider = new JSlider(0,255,255);
+    greenSlider = new JSlider(0,255,0);
+    blueSlider = new JSlider(0,255,0);
+    
+    SliderListener listener2 = new SliderListener();
+    redSlider.addChangeListener(listener2);
+    greenSlider.addChangeListener(listener2);
+    blueSlider.addChangeListener(listener2);
+    
+    upperPanel.add(alabel);
+    upperPanel.add(alpha);
+    upperPanel.add(dlabel);
+    upperPanel.add(depth);
+    upperPanel.add(nlabel);
+    upperPanel.add(sides);
+    upperPanel.add(draw);
+    lowerPanel.add(redSlider);
+    lowerPanel.add(greenSlider);
+    lowerPanel.add(blueSlider);
+    //lowerPanel.add(points);
+    
+    add(upperPanel,BorderLayout.NORTH);
+    add(lowerPanel,BorderLayout.SOUTH);
+    
+    
+    setPreferredSize(new Dimension(width,height));
+  }  
+ public void actionPerformed(ActionEvent event)  
+  {
+   while(!points.isEmpty()){
+     points.remove();
+   }
+    rnd = new Random();
+    double cx = width/2.0;
+    double cy = height/2.0;
+    double radius = 0.4*cx;
+    double theta;
+    
+    n = Integer.parseInt(sides.getText());
+    for(int i=0;i<n;i++)
+    {
+      theta = (2*Math.PI*i)/n;
+      double x = cx + radius*Math.cos(theta);
+      double y = cy - radius*Math.sin(theta);
+      points.add(new Point2D.Double(x,y));
+    }
+   fractalize();
+   
+ }
+  private void fractalize()
+  {
+    d = Integer.parseInt(depth.getText());
+    for(int i=0;i<d;i++)
+    {
+      int size = points.size();
+      for(int j=0;j<size;j++)
+      {
+        Point2D.Double A = points.remove();
+        Point2D.Double B = points.element();
+        points.add(A);
+        points.add(midPoint(A,B));
+      }
+    }
+    repaint();
+  }
+  
+  private Point2D.Double midPoint(Point2D.Double A, Point2D.Double B)
+  {
+    a = Double.parseDouble(alpha.getText());
+    double x0 = A.getX();
+    double y0 = A.getY();
+    double x1 = B.getX();
+    double y1 = B.getY();
+    double xmid = (x0+x1)/2;
+    double ymid = (y0+y1)/2;
+    
+    int sign = rnd.nextBoolean() ? 1 : -1;
+    
+    double x = xmid + sign*a*(y0-y1);
+    double y = ymid + sign*a*(x1-x0);
+    return new Point2D.Double(x,y);
+  }
+  public void paintComponent(Graphics g)
+  {
+    super.paintComponent(g);
+    int size = points.size();
+    for(int i=0;i<size;i++)
+    {
+      Point2D.Double A = points.remove();
+      Point2D.Double B = points.element();
+      int x0 = (int) A.getX();
+      int y0 = (int) A.getY();
+      int x1 = (int) B.getX();
+      int y1 = (int) B.getY();
+      g.drawLine(x0,y0,x1,y1);
+      points.add(A);
+    }
+  }
+  private class SliderListener implements ChangeListener
+  {
+    public void stateChanged(ChangeEvent event)
+    {
+      int red = redSlider.getValue();
+      int green = greenSlider.getValue();
+      int blue = blueSlider.getValue();
+      setBackground(new Color(red,green,blue));
+    }
+  }
+  public static void main(String[] arg)
+  {
+    JPanel panel = new JPanel();
+    JFrame frame = new JFrame("Fractal Island");
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    frame.add(new FractalIsland());
+    frame.pack();
+    frame.setVisible(true);
+  }
+  }
